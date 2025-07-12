@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from phonenumber_field.modelfields import PhoneNumberField
 
 class UserManager(BaseUserManager):
     """Custom user manager for user model"""
@@ -30,6 +31,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     is_active = models.BooleanField(default=True)
     is_verified = models.BooleanField(default=False)
+    phone = PhoneNumberField(unique=True, region='IN')  # 'IN' for India (optional)
 
     objects = UserManager()
     

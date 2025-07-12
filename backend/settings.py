@@ -47,9 +47,11 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     "corsheaders",
+    'phonenumber_field',
     
     # Custom apps
     "core",
+    "app",
 ]
 
 MIDDLEWARE = [
