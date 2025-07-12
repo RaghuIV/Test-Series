@@ -4,18 +4,23 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 class UserManager(BaseUserManager):
     """Custom user manager for user model"""
-    def create_user(self, email, password=None, **extra_fields):
-        """Create and return a regular user with an email and password."""
+
+    def create_user(self, email, password=None, phone=None, **extra_fields):
+        """Create and return a regular user with an email, password, and optional phone."""
         if not email:
             raise ValueError("The Email field must be set")
+
         email = self.normalize_email(email)
+        if phone:
+            extra_fields['phone'] = phone  # Explicitly set phone if passed
+
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
-        """Create and return a superuser with email and password."""
+    def create_superuser(self, email, password=None, phone=None, **extra_fields):
+        """Create and return a superuser with email, password, and optional phone."""
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
@@ -24,7 +29,8 @@ class UserManager(BaseUserManager):
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self.create_user(email, password, **extra_fields)
+        return self.create_user(email, password, phone=phone, **extra_fields)
+
 
 class User(AbstractUser):
     """Custom user model to login with email and password"""
