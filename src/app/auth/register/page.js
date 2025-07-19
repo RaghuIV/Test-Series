@@ -8,7 +8,8 @@ export default function Register() {
   const { darkMode } = useThemeStore();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -16,11 +17,44 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  e.preventDefault();
+
+  if (password !== confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    const res = await fetch("http://127.0.0.1:8000/api/register/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        phone,
+        password,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Registration failed");
+    }
+
+    alert("Registration successful!");
+    window.location.href = "/auth/otp";
+  } catch (error) {
+    alert(error.message);
+  } finally {
     setIsLoading(false);
-  };
+  }
+};
 
   return (
       <div className="max-h-screen overflow-y-auto">
@@ -53,13 +87,14 @@ export default function Register() {
         </div>
 
         {/* Full Name Field */}
-        <div className="space-y-1">
+        <div className="space-y-1 flex gap-x-1">
+          <div>
           <label
             className={`block text-sm font-medium ${
               darkMode ? "text-gray-300" : "text-gray-700"
             }`}
           >
-            Full Name
+            First Name
           </label>
           <div className="relative">
             <User
@@ -69,9 +104,9 @@ export default function Register() {
             />
             <input
               type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Enter your full name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200 ${
                 darkMode
                   ? "bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:bg-gray-700"
@@ -79,6 +114,35 @@ export default function Register() {
               } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
               required
             />
+          </div>
+          </div>
+          <div>
+          <label
+            className={`block text-sm font-medium ${
+              darkMode ? "text-gray-300" : "text-gray-700"
+            }`}
+          >
+            Last Name
+          </label>
+          <div className="relative">
+            <User
+              className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+                darkMode ? "text-gray-400" : "text-gray-500"
+              }`}
+            />
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last name"
+              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200 ${
+                darkMode
+                  ? "bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:bg-gray-700"
+                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:bg-blue-50/50"
+              } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+              required
+            />
+          </div>
           </div>
         </div>
 
