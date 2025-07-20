@@ -6,9 +6,8 @@ from django.utils.encoding import smart_str, smart_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth import get_user_model
 from .models import OTP
-from utils.send_otp import send_otp_email
 from utils.send_email_ import send_email
-from utils.templates import reset_password_email_template
+from utils.templates import reset_password_email_template , otp_email_template
 from django.conf import settings
 
 User = get_user_model()
@@ -31,9 +30,6 @@ class UserSerializer(serializers.ModelSerializer):
     def get_tokens(self, user):
         """
         Generate access and refresh tokens for a given user.
-
-        :param user: User instance
-        :return: Dict with 'access' and 'refresh' tokens
         """
         refresh = RefreshToken.for_user(user)
         return {
@@ -41,23 +37,9 @@ class UserSerializer(serializers.ModelSerializer):
             "access": str(refresh.access_token),
         }
 
-    def create(self, validated_data):
-        """
-        Create a new user with a securely hashed password.
-
-        :param validated_data: Validated data dictionary
-        :return: User instance
-        """
-        user = User.objects.create_user(**validated_data)
-        return user
-
     def validate_email(self, value):
         """
         Ensure the provided email is unique.
-
-        :param value: Email address
-        :return: The validated email
-        :raises ValidationError: If email is already taken
         """
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
@@ -66,14 +48,31 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_phone(self, value):
         """
         Ensure the provided phone number is unique.
-
-        :param value: Phone number
-        :return: The validated phone number
-        :raises ValidationError: If phone number is already taken
         """
         if User.objects.filter(phone=value).exists():
             raise serializers.ValidationError("A user with this phone already exists.")
         return value
+
+    def validate(self, attrs):
+        """
+        Validate that the email has a verified OTP entry.
+        """
+        email = attrs.get("email")
+        otp_instance = OTP.objects.filter(email=email).first()
+
+        if not otp_instance or not otp_instance.is_verified:
+            raise serializers.ValidationError("Email is not verified yet.")
+
+        return attrs
+
+    def create(self, validated_data):
+        """
+        Create a new user with a securely hashed password.
+        """
+        user = User.objects.create_user(**validated_data)
+        user.is_verified = True
+        user.save()
+        return user
 
 
 class LoginSerializer(serializers.Serializer):
@@ -108,14 +107,9 @@ class VerifyOTPSerializer(serializers.Serializer):
         otp_input = attrs.get("otp")
 
         try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError({"email": "User not found."})
-
-        try:
-            otp = user.otp
+            otp = OTP.objects.get(email=email)
         except OTP.DoesNotExist:
-            raise serializers.ValidationError({"otp": "No OTP generated for this user."})
+            raise serializers.ValidationError({"otp": "No user found with this email"})
 
         if otp.is_expired():
             otp.delete()
@@ -124,54 +118,46 @@ class VerifyOTPSerializer(serializers.Serializer):
         if otp.otp_code != otp_input:
             raise serializers.ValidationError({"otp": "Invalid OTP."})
 
-        attrs["user"] = user
         attrs["otp"] = otp
         return attrs
 
 
-class ResendOTPSerializer(serializers.Serializer):
+class SendOTPSerializer(serializers.Serializer):
     """
-    Serializer to resend OTP to a user.
+    Serializer to send OTP to a user.
 
     Accepts an email address and validates if the account is unverified.
     """
 
-    email = serializers.CharField()
+    email = serializers.EmailField()
 
-    def validate(self, attrs):
+    def validate_email(self, email):
         """
-        Ensure the user exists and is not already verified.
-
-        :param attrs: Input data
-        :return: Validated data with attached user
-        :raises ValidationError: If validation fails
+        Checks if the email exists in the OTP model and if it is already verified.
         """
-        email = attrs.get("email")
-
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError({"email": "User not found."})
-
-        if user.is_verified:
-            raise serializers.ValidationError({"email": "Account already verified."})
-
-        attrs["user"] = user
-        return attrs
+        otp_instance = OTP.objects.filter(email=email).first()
+        if otp_instance and otp_instance.is_verified:
+            raise serializers.ValidationError("Account already verified.")
+        return email
 
     def create(self, validated_data):
-        """
-        Generate and send a new OTP for the user.
+        email = validated_data['email']
 
-        :param validated_data: Data containing the user object
-        :return: User instance
-        """
-        user = validated_data["user"]
+        # Delete any existing OTP for this email to enforce uniqueness
+        OTP.objects.filter(email=email).delete()
 
-        OTP.objects.filter(user=user).delete()
-        send_otp_email(user)
-
-        return user
+        # Create a new OTP instance
+        otp_instance = OTP(email=email)
+        otp_instance.generate_otp()  # This saves the instance
+        
+        # Send OTP Email
+        send_email(
+            subject="Your OTP Code",
+            message=None,
+            html_message=otp_email_template(otp_instance.otp_code),
+            recipient_list=[email]
+        )
+        return otp_instance
 
 class ForgotPasswordSerializer(serializers.Serializer):
     """

@@ -4,7 +4,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import TestSeries, Tag, Exam, Question
 from .serializers import TestSeriesSerializer, TagSerializer, ExamSerializer, QuestionSerializer
+from drf_spectacular.utils import extend_schema
 
+@extend_schema(tags=['Tags'])
 class TagViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing tags.
@@ -19,6 +21,7 @@ class TagViewSet(viewsets.ModelViewSet):
         # Set created_by to the current user
         serializer.save(created_by=self.request.user)
 
+@extend_schema(tags=['TestSeries'])
 class TestSeriesViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing TestSeries instances.
@@ -28,7 +31,8 @@ class TestSeriesViewSet(viewsets.ModelViewSet):
     queryset = TestSeries.objects.all()
     serializer_class = TestSeriesSerializer
     permission_classes = [permissions.IsAuthenticated]
-        
+
+@extend_schema(tags=['Exams'])
 class ExamViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing Exam instances.
@@ -39,6 +43,7 @@ class ExamViewSet(viewsets.ModelViewSet):
     serializer_class = ExamSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+@extend_schema(tags=['Question'])
 class QuestionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing Question instances.

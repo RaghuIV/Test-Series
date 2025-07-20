@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     "corsheaders",
     'phonenumber_field',
+    'drf_spectacular',
     
     # Custom apps
     "core",
@@ -145,6 +146,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 
@@ -181,5 +183,37 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
-# Frontend Url for 
+# Frontend Url
+
 FRONTEND_URL = os.getenv("FRONTEND_URL")
+
+# Schema Metadata
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Test Series API',
+    'DESCRIPTION': 'API documentation for the test series platform.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'AUTHENTICATION_WHITELIST': [],
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+    'SECURITY': [
+        [{'BearerAuth': []}],
+    ],
+    'AUTHENTICATION_SCHEMES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    },
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,  # keep your token between calls
+    },
+    'SERVE_PUBLIC': False,
+}

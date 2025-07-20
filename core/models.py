@@ -128,24 +128,26 @@ class UserRole(models.Model):
 
 class OTP(models.Model):
     """
-    Model to store a One-Time Password (OTP) for a user.
+    Model to store a One-Time Password (OTP) for an email address.
 
-    Each user is associated with a single OTP instance via a one-to-one relationship.
+    Each email is associated with a single OTP instance.
     The OTP is a 6-digit numeric code, and it expires 10 minutes after creation.
     """
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    email = models.EmailField(unique=True)
     otp_code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now=True)
+    is_verified = models.BooleanField(default=False)  # ✅ Added field
 
     def generate_otp(self):
         """
-        Generate a new 6-digit OTP for the user.
+        Generate a new 6-digit OTP for the email.
 
         Updates the `otp_code` with a random number and resets `created_at` timestamp.
         """
         self.otp_code = f"{random.randint(100000, 999999)}"
         self.created_at = timezone.now()
+        self.is_verified = False  # ✅ Reset verification status on new OTP
         self.save()
 
     def is_expired(self):

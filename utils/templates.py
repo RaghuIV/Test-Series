@@ -14,3 +14,15 @@ def reset_password_email_template(first_name, last_name, reset_link):
     <a href="{reset_link}">Reset Password</a>
     <p>This link will expire soon.</p>
     """
+    
+def otp_email_template(otp_code):
+    return f"""
+    <html>
+        <body>
+            <h2>Your One-Time Password</h2>
+            <p>Use the following OTP to verify your account:</p>
+            <h1 style="color: #2c3e50;">{otp_code}</h1>
+            <p>This OTP is valid for 10 minutes.</p>
+        </body>
+    </html>
+    """
