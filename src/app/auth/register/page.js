@@ -3,14 +3,16 @@ import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
 import Link from "next/link";
 import useThemeStore from '@/components/stores/useThemeStore';
+import { useRouter } from "next/navigation"; 
 
 export default function Register() {
+  const router = useRouter();
   const { darkMode } = useThemeStore();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
+  const [inputEmail, setInputEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -25,6 +27,7 @@ export default function Register() {
   }
 
   setIsLoading(true);
+  localStorage.setItem('email',inputEmail)
 
   try {
     const res = await fetch("http://127.0.0.1:8000/api/register/", {
@@ -35,7 +38,7 @@ export default function Register() {
       body: JSON.stringify({
         first_name: firstName,
         last_name: lastName,
-        email,
+        email: inputEmail,
         phone,
         password,
       }),
@@ -47,8 +50,7 @@ export default function Register() {
       throw new Error(data.message || "Registration failed");
     }
 
-    alert("Registration successful!");
-    window.location.href = "/auth/otp";
+    router.push("/auth/otp");
   } catch (error) {
     alert(error.message);
   } finally {
@@ -163,8 +165,8 @@ export default function Register() {
             />
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={inputEmail}
+              onChange={(e) => setInputEmail(e.target.value)}
               placeholder="Enter your email"
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200 ${
                 darkMode

@@ -3,8 +3,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { Shield, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import useThemeStore from '@/components/stores/useThemeStore';
+import { useRouter } from "next/navigation"; 
 
 export default function OTPVerification() {
+  const router = useRouter();
   const { darkMode } = useThemeStore();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function OTPVerification() {
   }, [timer]);
 
   const handleOtpChange = (index, value) => {
-    if (value.length > 1) return; // Prevent multiple characters
+    if (value.length > 1) return; 
     
     const newOtp = [...otp];
     newOtp[index] = value;
@@ -69,7 +71,7 @@ export default function OTPVerification() {
       alert("Please enter all 6 digits");
       return;
     }
-
+    const storedEmail = localStorage.getItem('email')
     setIsLoading(true);
 
     try {
@@ -79,8 +81,8 @@ export default function OTPVerification() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          email: storedEmail,
           otp: otpString,
-          // Add email or phone from previous step if needed
         }),
       });
 
@@ -91,8 +93,7 @@ export default function OTPVerification() {
       }
 
       alert("Verification successful!");
-      // Redirect to dashboard or login
-      window.location.href = "/dashboard";
+      router.push("/auth/login/");
     } catch (error) {
       alert(error.message);
       // Clear OTP on error
