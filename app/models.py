@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -62,7 +63,6 @@ class TestSeries(models.Model):
         :return: Final price after discount if applicable
         :rtype: Decimal
         """
-        from django.utils import timezone
         now = timezone.now()
 
         if (
