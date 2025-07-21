@@ -158,3 +158,6 @@ class OTP(models.Model):
         :rtype: bool
         """
         return timezone.now() > self.created_at + timedelta(minutes=10)
+    
+    def __str__(self):
+        return f"{self.email} → {self.is_verified}"
