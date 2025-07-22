@@ -3,18 +3,22 @@ import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
 import Link from "next/link";
 import useThemeStore from '@/components/stores/useThemeStore';
+import useUserStore from "@/components/stores/useUserStore";
 import { useRouter } from "next/navigation"; 
 
 export default function Register() {
+  const {
+    email,
+    password,
+    phone,
+    firstName,
+    lastName,
+    setField,
+  } = useUserStore();
   const router = useRouter();
   const { darkMode } = useThemeStore();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [inputEmail, setInputEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,35 +31,29 @@ export default function Register() {
   }
 
   setIsLoading(true);
-  localStorage.setItem('email',inputEmail)
-
+  
   try {
-    const res = await fetch("http://127.0.0.1:8000/api/register/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        first_name: firstName,
-        last_name: lastName,
-        email: inputEmail,
-        phone,
-        password,
-      }),
-    });
+      const res = await fetch("http://127.0.0.1:8000/api/send-otp/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+        }),
+      });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Registration failed");
+      if(!res.ok){
+        throw new Error('Unable to get Otp, Please try again!')
+      }
     }
-
-    router.push("/auth/otp");
-  } catch (error) {
-    alert(error.message);
-  } finally {
-    setIsLoading(false);
+  catch(err){
+    alert(err)
   }
+  finally{
+   router.push("/auth/otp");
+  setIsLoading(false);
+  }  
 };
 
   return (
@@ -107,7 +105,7 @@ export default function Register() {
             <input
               type="text"
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={(e) => setField('firstName',e.target.value)}
               placeholder="First name"
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200 ${
                 darkMode
@@ -135,7 +133,7 @@ export default function Register() {
             <input
               type="text"
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={(e) => setField('lastName',e.target.value)}
               placeholder="Last name"
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200 ${
                 darkMode
@@ -165,8 +163,8 @@ export default function Register() {
             />
             <input
               type="email"
-              value={inputEmail}
-              onChange={(e) => setInputEmail(e.target.value)}
+              value={email}
+              onChange={(e) => setField('email',e.target.value)}
               placeholder="Enter your email"
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200 ${
                 darkMode
@@ -196,7 +194,7 @@ export default function Register() {
             <input
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setField('phone',e.target.value)}
               placeholder="Enter your phone number"
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200 ${
                 darkMode
@@ -226,7 +224,7 @@ export default function Register() {
             <input
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setField('password',e.target.value)}
               placeholder="Create a strong password"
               className={`w-full pl-10 pr-12 py-2.5 rounded-xl border transition-all duration-200 ${
                 darkMode

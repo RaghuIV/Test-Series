@@ -3,11 +3,22 @@ import React, { useState, useRef, useEffect } from "react";
 import { Shield, ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import useThemeStore from '@/components/stores/useThemeStore';
+import useUserStore from "@/components/stores/useUserStore";
 import { useRouter } from "next/navigation"; 
 
 export default function OTPVerification() {
   const router = useRouter();
   const { darkMode } = useThemeStore();
+
+  const {
+    email,
+    password,
+    phone,
+    firstName,
+    lastName,
+    resetUser,
+  } = useUserStore();
+
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -71,7 +82,6 @@ export default function OTPVerification() {
       alert("Please enter all 6 digits");
       return;
     }
-    const storedEmail = localStorage.getItem('email')
     setIsLoading(true);
 
     try {
@@ -81,7 +91,7 @@ export default function OTPVerification() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: storedEmail,
+          email: email,
           otp: otpString,
         }),
       });
@@ -91,8 +101,28 @@ export default function OTPVerification() {
       if (!res.ok) {
         throw new Error(data.message || "OTP verification failed");
       }
+      const registerRes = await fetch("http://127.0.0.1:8000/api/register/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        phone,
+        first_name: firstName,
+        last_name: lastName,
+      }),
+    });
 
-      alert("Verification successful!");
+    const registerData = await registerRes.json();
+
+    if (!registerRes.ok) {
+      throw new Error(registerData.message || "Registration failed");
+    }
+    
+    resetUser();
+
       router.push("/auth/login/");
     } catch (error) {
       alert(error.message);
@@ -118,7 +148,8 @@ export default function OTPVerification() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // Add email or phone from previous step
+          email: email,
+          otp: otpString,
         }),
       });
 
